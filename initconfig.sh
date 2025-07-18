@@ -6,7 +6,7 @@ check_ipv6_support() {
     if ip -6 addr | grep -q "inet6"; then
         echo "1"  # IPv6 supported
     else
-        echo "0"  # 不IPv6 supported
+        echo "0"  # No IPv6 supported
     fi
 }
 
@@ -31,11 +31,11 @@ add_node_config() {
     fi
     while true; do
         read -rp "Please enter节点Node ID：" NodeID
-        # 判断NodeID是否为正整数
+        # judgment NodeID Is it a positive integer?
         if [[ "$NodeID" =~ ^[0-9]+$ ]]; then
-            break  # 输入正确，退出循环
+            break  # Enter correctly，exit loop
         else
-            echo "错误：Please enter正确的数字作为Node ID。"
+            echo "mistake：Please enter The correct number is as Node ID。"
         fi
     done
 
@@ -73,14 +73,14 @@ add_node_config() {
     fi
     fastopen=true
     if [ "$NodeType" == "vless" ]; then
-        read -rp "Is this a reality node? (y/n)(y/n)" isreality
+        read -rp "Is this a reality node? (y/n)" isreality
     elif [ "$NodeType" == "hysteria" ] || [ "$NodeType" == "hysteria2" ] || [ "$NodeType" == "tuic" ] || [ "$NodeType" == "anytls" ]; then
         fastopen=false
         istls="y"
     fi
 
     if [[ "$isreality" != "y" && "$isreality" != "Y" &&  "$istls" != "y" ]]; then
-        read -rp "Would you like to enable TLS configuration? (y/n)(y/n)" istls
+        read -rp "Would you like to enable TLS configuration? (y/n)" istls
     fi
 
     certmode="none"
@@ -96,7 +96,7 @@ add_node_config() {
             2 ) certmode="dns" ;;
             3 ) certmode="self" ;;
         esac
-        read -rp "Please enter节点证书域名(example.com)：" certdomain
+        read -rp "Please enter Node certificate domain name(example.com)：" certdomain
         if [ "$certmode" != "http" ]; then
             echo -e "${red}Please manually edit the config file and restart V2bX!${plain}"
         fi
@@ -206,7 +206,7 @@ generate_config_file() {
     echo -e "${red}2. Generated config will be saved to /etc/V2bX/config.json${plain}"
     echo -e "${red}3. Previous config will be saved to /etc/V2bX/config.json.bak${plain}"
     echo -e "${red}4. Partial TLS support only${plain}"
-    echo -e "${red}5. The config will include audit rules. Continue? (y/n)(y/n)${plain}"
+    echo -e "${red}5. The config will include audit rules. Continue? (y/n)${plain}"
     read -rp "Please enter：" continue_prompt
     if [[ "$continue_prompt" =~ ^[Nn][Oo]? ]]; then
         exit 0
@@ -222,9 +222,9 @@ generate_config_file() {
     
     while true; do
         if [ "$first_node" = true ]; then
-            read -rp "Please enter机场网址(https://example.com)：" ApiHost
-            read -rp "Please enter面板对接API Key：" ApiKey
-            read -rp "Fix the panel domain and API Key? (y/n)(y/n)" fixed_api
+            read -rp "Please enter Airport website(https://example.com)：" ApiHost
+            read -rp "Please enter Panel docking API Key：" ApiKey
+            read -rp "Fix the panel domain and API Key? (y/n)" fixed_api
             if [ "$fixed_api" = "y" ] || [ "$fixed_api" = "Y" ]; then
                 fixed_api_info=true
                 echo -e "${red}Fixed successfully${plain}"
@@ -232,21 +232,22 @@ generate_config_file() {
             first_node=false
             add_node_config
         else
-            read -rp "Continue adding node configuration? (press Enter to continue, n or no to exit)(回车继续，输入n或no退出)" continue_adding_node
+            read -rp "Continue adding node configuration? (press Enter to continue, n or no to exit)(Press Enter to continue，
+Enter n or no to exit)" continue_adding_node
             if [[ "$continue_adding_node" =~ ^[Nn][Oo]? ]]; then
                 break
             elif [ "$fixed_api_info" = false ]; then
-                read -rp "Please enter机场网址(https://example.com)：" ApiHost
-                read -rp "Please enter面板对接API Key：" ApiKey
+                read -rp "Please enter Airport website(https://example.com)：" ApiHost
+                read -rp "Please enter Panel docking API Key：" ApiKey
             fi
             add_node_config
         fi
     done
 
-    # 初始化核心配置数组
+    # Initialize core configuration array
     cores_config="["
 
-    # 检查并添加xray核心配置
+    # Check and add xray Core configuration
     if [ "$core_xray" = true ]; then
         cores_config+="
     {
@@ -260,7 +261,7 @@ generate_config_file() {
     },"
     fi
 
-    # 检查并添加sing核心配置
+    # Check and add sing Core configuration
     if [ "$core_sing" = true ]; then
         cores_config+="
     {
@@ -278,7 +279,7 @@ generate_config_file() {
     },"
     fi
 
-    # 检查并添加hysteria2核心配置
+    # Check and add hysteria2 Core configuration
     if [ "$core_hysteria2" = true ]; then
         cores_config+="
     {
@@ -289,14 +290,14 @@ generate_config_file() {
     },"
     fi
 
-    # 移除最后一个逗号并关闭数组
+    # Remove the last comma and close the array
     cores_config+="]"
     cores_config=$(echo "$cores_config" | sed 's/},]$/}]/')
 
-    # 切换到配置文件目录
+    # Switch to the configuration file directory
     cd /etc/V2bX
     
-    # 备份旧的配置文件
+    # Back up old configuration files
     mv config.json config.json.bak
     nodes_config_str="${nodes_config[*]}"
     formatted_nodes_config="${nodes_config_str%,}"
