@@ -169,7 +169,7 @@ uninstall() {
     rm /usr/local/V2bX/ -rf
 
     echo ""
-    echo -e "Uninstall successful. If you want to delete this script, run after exiting: ${green}rm /usr/bin/V2bX -f${plain} 进行删除"
+    echo -e "Uninstall successful. If you want to delete this script, run after exiting: ${green}rm /usr/bin/V2bX -f${plain} Delete"
     echo ""
 
     if [[ $# == 0 ]]; then
