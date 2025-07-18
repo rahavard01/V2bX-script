@@ -485,14 +485,14 @@ add_node_config() {
     fi
     fastopen=true
     if [ "$NodeType" == "vless" ]; then
-        read -rp "Is this a reality node? (y/n)(y/n)" isreality
+        read -rp "Is this a reality node? (y/n)" isreality
     elif [ "$NodeType" == "hysteria" ] || [ "$NodeType" == "hysteria2" ] || [ "$NodeType" == "tuic" ] || [ "$NodeType" == "anytls" ]; then
         fastopen=false
         istls="y"
     fi
 
     if [[ "$isreality" != "y" && "$isreality" != "Y" &&  "$istls" != "y" ]]; then
-        read -rp "Enable TLS configuration? (y/n)(y/n)" istls
+        read -rp "Enable TLS configuration? (y/n)" istls
     fi
 
     certmode="none"
@@ -635,7 +635,7 @@ generate_config_file() {
         if [ "$first_node" = true ]; then
             read -rp "Enter panel URL (e.g., https://example.com):" ApiHost
             read -rp "Enter panel API Key:" ApiKey
-            read -rp "Set fixed API URL and API Key? (y/n)(y/n)" fixed_api
+            read -rp "Set fixed API URL and API Key? (y/n)" fixed_api
             if [ "$fixed_api" = "y" ] || [ "$fixed_api" = "Y" ]; then
                 fixed_api_info=true
                 echo -e "${red}Fixed address successfully.${plain}"
