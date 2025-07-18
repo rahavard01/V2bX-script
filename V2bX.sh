@@ -502,13 +502,13 @@ add_node_to_existing_config() {
 
     echo -e "${green}✅ Node added successfully to config.json${plain}"
 
-    # ری‌استارت اختیاری
-    read -rp "Do you want to restart V2bX service now? (y/n): " restart_choice
-    if [[ $restart_choice == "y" || $restart_choice == "Y" ]]; then
-        systemctl restart V2bX && echo -e "${green}V2bX restarted.${plain}"
-    else
-        echo -e "${yellow}You can restart manually using: systemctl restart V2bX${plain}"
-    fi
+    echo -e "${yellow}Restarting V2bX...${plain}"
+    V2bX restart
+    echo -e "${green}✅ V2bX restarted via management script.${plain}"
+    
+    # برگشت به منوی اصلی
+    before_show_menu
+
 }
 
 
