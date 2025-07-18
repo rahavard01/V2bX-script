@@ -91,7 +91,6 @@ confirm_restart() {
 }
 
 before_show_menu() {
-    echo -e "${green}18.${plain} Add node to existing config (without overwrite)"
     echo && echo -n -e "${yellow}Press Enter to return to main menu: ${plain}" && read temp
     show_menu
 }
@@ -983,11 +982,10 @@ show_menu() {
   ${green}15.${plain} Generate V2bX config file
   ${green}16.${plain} Open all VPS firewall ports
   ${green}17.${plain} Exit script
-  ${green}18.${plain} Add node to existing config (without overwrite)
  "
  #The next update can be added to the upper part of the string
     show_status
-    echo && read -rp "Enter your choice [0-18]: " num
+    echo && read -rp "Enter your choice [0-17]: " num
 
     case "${num}" in
         0) config ;;
@@ -1035,166 +1033,3 @@ if [[ $# > 0 ]]; then
 else
     show_menu
 fi
-
-
-
-add_node_config() {
-    echo -e "${green}انتخاب نوع Core:${plain}"
-    echo -e "1. xray"
-    echo -e "2. singbox"
-    echo -e "3. hysteria2"
-    read -rp "عدد را وارد کن: " core_type
-    case $core_type in
-        1) core="xray"; core_xray=true ;;
-        2) core="sing"; core_sing=true ;;
-        3) core="hysteria2"; core_hysteria2=true ;;
-        *) echo "ورودی نامعتبر"; exit 1 ;;
-    esac
-
-    read -rp "🆔 Node ID: " NodeID
-    echo -e "${green}انتخاب پروتکل نود:${plain}"
-    echo -e "1. Shadowsocks"
-    echo -e "2. Vless"
-    echo -e "3. Vmess"
-    echo -e "4. Hysteria"
-    echo -e "5. Hysteria2"
-    echo -e "6. Trojan"
-    echo -e "7. Tuic"
-    echo -e "8. AnyTLS"
-    read -rp "شماره: " pt
-    case "$pt" in
-        1) NodeType="shadowsocks" ;;
-        2) NodeType="vless" ;;
-        3) NodeType="vmess" ;;
-        4) NodeType="hysteria" ;;
-        5) NodeType="hysteria2" ;;
-        6) NodeType="trojan" ;;
-        7) NodeType="tuic" ;;
-        8) NodeType="anytls" ;;
-        *) NodeType="shadowsocks" ;;
-    esac
-
-    read -rp "🌐 آدرس پنل (مثال: https://example.com): " ApiHost
-    read -rp "🔐 API Key: " ApiKey
-    read -rp "🌐 دامین گواهی (مثال: example.com): " certdomain
-    certmode="none"
-    listen_ip="0.0.0.0"
-
-    node_json=$(cat <<EOF
-{
-  "Core": "$core",
-  "ApiHost": "$ApiHost",
-  "ApiKey": "$ApiKey",
-  "NodeID": $NodeID,
-  "NodeType": "$NodeType",
-  "Timeout": 30,
-  "ListenIP": "$listen_ip",
-  "SendIP": "0.0.0.0",
-  "DeviceOnlineMinTraffic": 200,
-  "CertConfig": {
-    "CertMode": "$certmode",
-    "RejectUnknownSni": false,
-    "CertDomain": "$certdomain",
-    "CertFile": "/etc/V2bX/fullchain.cer",
-    "KeyFile": "/etc/V2bX/cert.key",
-    "Email": "v2bx@github.com",
-    "Provider": "cloudflare",
-    "DNSEnv": {
-      "EnvName": "env1"
-    }
-  }
-EOF
-)
-
-    if [ "$core" == "xray" ]; then
-        node_json+=$(cat <<EOF
-,
-  "EnableProxyProtocol": false,
-  "EnableUot": true,
-  "EnableTFO": true,
-  "DNSType": "UseIPv4"
-EOF
-)
-    elif [ "$core" == "sing" ]; then
-        node_json+=$(cat <<EOF
-,
-  "TCPFastOpen": true,
-  "SniffEnabled": true
-EOF
-)
-    elif [ "$core" == "hysteria2" ]; then
-        node_json+=$(cat <<EOF
-,
-  "Hysteria2ConfigPath": "/etc/V2bX/hy2config.yaml"
-EOF
-)
-    fi
-
-    node_json+="
-}"
-    nodes_config=()
-    nodes_config+=("$node_json")
-}
-
-
-
-add_node_interactive_to_existing_config() {
-    config_file="/etc/V2bX/config.json"
-
-    if [ ! -f "$config_file" ]; then
-        echo -e "${red}⚠️ فایل کانفیگ موجود نیست. لطفاً اول با گزینه 15 کانفیگ اولیه رو بساز.${plain}"
-        return 1
-    fi
-
-    echo -e "${yellow}در حال اضافه کردن نود جدید به کانفیگ موجود...${plain}"
-
-    nodes_config=()
-    core_xray=false
-    core_sing=false
-    core_hysteria2=false
-
-    read -rp "🌐 لطفاً آدرس پنل (https://example.com): " ApiHost
-    read -rp "🔐 کلید API پنل: " ApiKey
-    add_node_config
-
-    node_json="${nodes_config[0]}"
-    node_json=$(echo "$node_json" | jq .)
-
-    jq --argjson newnode "$node_json" '.Nodes += [$newnode]' "$config_file" > /tmp/config_updated.json && mv /tmp/config_updated.json "$config_file"
-
-    if $core_xray; then
-        core_exists=$(jq '.Cores[] | select(.Type=="xray")' "$config_file")
-        if [ -z "$core_exists" ]; then
-            jq '.Cores += [{
-                "Type": "xray",
-                "Log": { "Level": "error", "ErrorPath": "/etc/V2bX/error.log" },
-                "OutboundConfigPath": "/etc/V2bX/custom_outbound.json",
-                "RouteConfigPath": "/etc/V2bX/route.json"
-            }]' "$config_file" > /tmp/core_tmp.json && mv /tmp/core_tmp.json "$config_file"
-        fi
-    fi
-
-    if $core_sing; then
-        core_exists=$(jq '.Cores[] | select(.Type=="sing")' "$config_file")
-        if [ -z "$core_exists" ]; then
-            jq '.Cores += [{
-                "Type": "sing",
-                "Log": { "Level": "error", "Timestamp": true },
-                "NTP": { "Enable": false, "Server": "time.apple.com", "ServerPort": 0 },
-                "OriginalPath": "/etc/V2bX/sing_origin.json"
-            }]' "$config_file" > /tmp/core_tmp.json && mv /tmp/core_tmp.json "$config_file"
-        fi
-    fi
-
-    if $core_hysteria2; then
-        core_exists=$(jq '.Cores[] | select(.Type=="hysteria2")' "$config_file")
-        if [ -z "$core_exists" ]; then
-            jq '.Cores += [{
-                "Type": "hysteria2",
-                "Log": { "Level": "error" }
-            }]' "$config_file" > /tmp/core_tmp.json && mv /tmp/core_tmp.json "$config_file"
-        fi
-    fi
-
-    echo -e "${green}✅ نود جدید با موفقیت به فایل کانفیگ اضافه شد.${plain}"
-}
