@@ -444,7 +444,7 @@ add_node_to_existing_config() {
     core_exists=$(echo "$updated_nodes" | jq --arg core "$new_core" '.Cores[] | select(.Type == $core)' | wc -l)
 
     if [[ "$core_exists" -eq 0 ]]; then
-        echo -e "${yellow}Core \"$new_core\" not found in existing Cores. Appending...${plain}"
+        echo -e "${green}Core \"$new_core\" not found in existing Cores. Appending...${plain}"
 
         case "$new_core" in
             "xray")
@@ -482,7 +482,7 @@ add_node_to_existing_config() {
                 }'
                 ;;
             *)
-                echo -e "${red}Unknown core type \"$new_core\". Skipping core append.${plain}"
+                echo -e "${green}Unknown core type \"$new_core\". Skipping core append.${plain}"
                 ;;
         esac
 
@@ -502,7 +502,7 @@ add_node_to_existing_config() {
 
     echo -e "${green}✅ Node added successfully to config.json${plain}"
 
-    echo -e "${yellow}Restarting V2bX...${plain}"
+    echo -e "${green}Restarting V2bX...${plain}"
     V2bX restart
     
     # برگشت به منوی اصلی
