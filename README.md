@@ -9,7 +9,7 @@ If you are not sure about the script，You can use this sandbox to test it befor
 
 # Detailed usage tutorial
 
-[教程](https://v2bx.v-50.me/)
+[Tutorial](https://v2bx.v-50.me/)
 
 # One-click installation
 
