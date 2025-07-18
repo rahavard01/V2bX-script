@@ -504,7 +504,6 @@ add_node_to_existing_config() {
 
     echo -e "${yellow}Restarting V2bX...${plain}"
     V2bX restart
-    echo -e "${green}✅ V2bX restarted via management script.${plain}"
     
     # برگشت به منوی اصلی
     before_show_menu
