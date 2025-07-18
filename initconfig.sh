@@ -30,7 +30,7 @@ add_node_config() {
         continue
     fi
     while true; do
-        read -rp "Please enter节点Node ID：" NodeID
+        read -rp "Please enter Node ID：" NodeID
         # judgment NodeID Is it a positive integer?
         if [[ "$NodeID" =~ ^[0-9]+$ ]]; then
             break  # Enter correctly，exit loop
@@ -232,8 +232,7 @@ generate_config_file() {
             first_node=false
             add_node_config
         else
-            read -rp "Continue adding node configuration? (press Enter to continue, n or no to exit)(Press Enter to continue，
-Enter n or no to exit)" continue_adding_node
+            read -rp "Continue adding node configuration? (press Enter to continue, n or no to exit)" continue_adding_node
             if [[ "$continue_adding_node" =~ ^[Nn][Oo]? ]]; then
                 break
             elif [ "$fixed_api_info" = false ]; then
