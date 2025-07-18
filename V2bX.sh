@@ -502,7 +502,7 @@ add_node_to_existing_config() {
 
     echo -e "${green}✅ Node added successfully to config.json${plain}"
 
-    echo -e "${green}Restarting V2bX...${plain}"
+    echo -e "${plain}Restarting V2bX...${plain}"
     V2bX restart
     
     # برگشت به منوی اصلی
@@ -1078,8 +1078,8 @@ show_menu() {
   ${green}13.${plain} Generate X25519 Key
   ${green}14.${plain} Update V2bX maintenance script
   ${green}15.${plain} Generate V2bX config file
-  ${green}16.${plain} Open all VPS firewall ports
-  ${green}17.${plain} Add new node
+  ${green}16.${plain} Add new node
+  ${green}17.${plain} Open all VPS firewall ports
   ${green}18.${plain} Exit script
  "
  #The next update can be added to the upper part of the string
@@ -1103,8 +1103,8 @@ show_menu() {
         13) check_install && generate_x25519_key ;;
         14) update_shell ;;
         15) generate_config_file ;;
-        16) open_ports ;;
-        17) check_install && add_node_to_existing_config ;;
+        16) check_install && add_node_to_existing_config ;;
+        17) open_ports ;;
         18) exit ;;
         *) echo -e "${red}Please enter a valid number [0-16]${plain}" ;;
     esac
