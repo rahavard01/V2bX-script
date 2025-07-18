@@ -184,7 +184,7 @@ EOF
         echo -e "${green}V2bX ${last_version}${plain} installation complete. Autostart enabled."
     else
         rm /etc/systemd/system/V2bX.service -f
-        file="https://github.com/wyx2685/V2bX-script/raw/master/V2bX.service"
+        file="https://github.com/rahavard01/V2bX-script/raw/master/V2bX.service"
         wget -q -N --no-check-certificate -O /etc/systemd/system/V2bX.service ${file}
         systemctl daemon-reload
         systemctl stop V2bX
@@ -219,7 +219,7 @@ EOF
     [[ ! -f /etc/V2bX/custom_outbound.json ]] && cp custom_outbound.json /etc/V2bX/
     [[ ! -f /etc/V2bX/custom_inbound.json ]] && cp custom_inbound.json /etc/V2bX/
 
-    curl -o /usr/bin/V2bX -Ls https://raw.githubusercontent.com/wyx2685/V2bX-script/master/V2bX.sh
+    curl -o /usr/bin/V2bX -Ls https://raw.githubusercontent.com/rahavard01/V2bX-script/master/V2bX.sh
     chmod +x /usr/bin/V2bX
     if [ ! -L /usr/bin/v2bx ]; then
         ln -s /usr/bin/V2bX /usr/bin/v2bx
@@ -249,7 +249,7 @@ EOF
     if [[ $first_install == true ]]; then
         read -rp "Detected first V2bX installation. Generate config file automatically? (y/n): " if_generate
         if [[ $if_generate == [Yy] ]]; then
-            curl -o ./initconfig.sh -Ls https://raw.githubusercontent.com/wyx2685/V2bX-script/master/initconfig.sh
+            curl -o ./initconfig.sh -Ls https://raw.githubusercontent.com/rahavard01/V2bX-script/master/initconfig.sh
             source initconfig.sh
             rm initconfig.sh -f
             generate_config_file
