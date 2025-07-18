@@ -413,6 +413,105 @@ generate_x25519_key() {
     fi
 }
 
+add_node_to_existing_config() {
+    echo -e "${yellow}Loading initconfig.sh and collecting new node info...${plain}"
+
+    # گرفتن فایل initconfig و اجرای تابع ساخت نود
+    curl -o ./initconfig.sh -Ls https://raw.githubusercontent.com/rahavard01/V2bX-script/master/initconfig.sh
+    source ./initconfig.sh
+    rm -f ./initconfig.sh
+
+    # اجرای تابع که اطلاعات نود جدید رو می‌گیره و خروجی رو توی nodes_config میریزه
+    nodes_config=()
+    add_node_config
+    new_node="${nodes_config[0]}"
+    new_node=$(echo "$new_node" | sed 's/},$/}/')  # حذف کامای انتهایی
+
+    # فایل config اصلی
+    config_file="/etc/V2bX/config.json"
+    backup_file="/etc/V2bX/config.json.bak"
+    cp "$config_file" "$backup_file"
+
+    # گرفتن core مربوط به نود جدید
+    new_core=$(echo "$new_node" | jq -r '.Core')
+
+    echo -e "${green}New node Core: ${new_core}${plain}"
+
+    # اضافه کردن نود به لیست Nodes
+    updated_nodes=$(jq --argjson new_node "$new_node" '.Nodes += [$new_node]' "$config_file")
+
+    # بررسی اینکه آیا core در Cores وجود دارد؟
+    core_exists=$(echo "$updated_nodes" | jq --arg core "$new_core" '.Cores[] | select(.Type == $core)' | wc -l)
+
+    if [[ "$core_exists" -eq 0 ]]; then
+        echo -e "${yellow}Core \"$new_core\" not found in existing Cores. Appending...${plain}"
+
+        case "$new_core" in
+            "xray")
+                new_core_block='{
+                    "Type": "xray",
+                    "Log": {
+                        "Level": "error",
+                        "ErrorPath": "/etc/V2bX/error.log"
+                    },
+                    "OutboundConfigPath": "/etc/V2bX/custom_outbound.json",
+                    "RouteConfigPath": "/etc/V2bX/route.json"
+                }'
+                ;;
+            "sing")
+                new_core_block='{
+                    "Type": "sing",
+                    "Log": {
+                        "Level": "error",
+                        "Timestamp": true
+                    },
+                    "NTP": {
+                        "Enable": false,
+                        "Server": "time.apple.com",
+                        "ServerPort": 0
+                    },
+                    "OriginalPath": "/etc/V2bX/sing_origin.json"
+                }'
+                ;;
+            "hysteria2")
+                new_core_block='{
+                    "Type": "hysteria2",
+                    "Log": {
+                        "Level": "error"
+                    }
+                }'
+                ;;
+            *)
+                echo -e "${red}Unknown core type \"$new_core\". Skipping core append.${plain}"
+                ;;
+        esac
+
+        # افزودن core جدید به لیست
+        if [[ -n "$new_core_block" ]]; then
+            updated_json=$(echo "$updated_nodes" | jq --argjson new_core "$new_core_block" '.Cores += [$new_core]')
+        else
+            updated_json="$updated_nodes"
+        fi
+    else
+        echo -e "${green}Core \"$new_core\" already exists in Cores. No need to add.${plain}"
+        updated_json="$updated_nodes"
+    fi
+
+    # ذخیره فایل نهایی
+    echo "$updated_json" > "$config_file"
+
+    echo -e "${green}✅ Node added successfully to config.json${plain}"
+
+    # ری‌استارت اختیاری
+    read -rp "Do you want to restart V2bX service now? (y/n): " restart_choice
+    if [[ $restart_choice == "y" || $restart_choice == "Y" ]]; then
+        systemctl restart V2bX && echo -e "${green}V2bX restarted.${plain}"
+    else
+        echo -e "${yellow}You can restart manually using: systemctl restart V2bX${plain}"
+    fi
+}
+
+
 show_V2bX_version() {
     echo -n "V2bX version:"
     /usr/local/V2bX/V2bX version
@@ -981,8 +1080,8 @@ show_menu() {
   ${green}14.${plain} Update V2bX maintenance script
   ${green}15.${plain} Generate V2bX config file
   ${green}16.${plain} Open all VPS firewall ports
-  ${green}17.${plain} Exit script
-  ${green}18.${plain} Add new node
+  ${green}17.${plain} Add new node
+  ${green}18.${plain} Exit script
  "
  #The next update can be added to the upper part of the string
     show_status
@@ -1006,8 +1105,8 @@ show_menu() {
         14) update_shell ;;
         15) generate_config_file ;;
         16) open_ports ;;
-        17) exit ;;
-        18) check_install && add_node_to_existing_config ;;
+        17) check_install && add_node_to_existing_config ;;
+        18) exit ;;
         *) echo -e "${red}Please enter a valid number [0-16]${plain}" ;;
     esac
 }
