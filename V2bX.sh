@@ -958,7 +958,6 @@ show_usage() {
 }
 
 show_menu() {
-    echo -e "${green}18.${plain} Add node to existing config (without overwrite)"
     echo -e "
   ${green}V2bX backend management script,${plain}${red}not for Docker use${plain}
 --- https://github.com/wyx2685/V2bX ---
@@ -984,10 +983,11 @@ show_menu() {
   ${green}15.${plain} Generate V2bX config file
   ${green}16.${plain} Open all VPS firewall ports
   ${green}17.${plain} Exit script
+  ${green}18.${plain} Add node to existing config (without overwrite)
  "
  #The next update can be added to the upper part of the string
     show_status
-    echo && read -rp "Enter your choice [0-17]: " num
+    echo && read -rp "Enter your choice [0-18]: " num
 
     case "${num}" in
         0) config ;;
