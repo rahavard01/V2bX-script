@@ -80,23 +80,23 @@ fi
 
 install_base() {
     if [[ x"${release}" == x"centos" ]]; then
-        yum install epel-release wget curl unzip tar crontabs socat ca-certificates -y
+        yum install epel-release wget curl unzip tar crontabs socat ca-certificates jq -y
         update-ca-trust force-enable
     elif [[ x"${release}" == x"alpine" ]]; then
-        apk add wget curl unzip tar socat ca-certificates
+        apk add wget curl unzip tar socat ca-certificates jq
         update-ca-certificates
     elif [[ x"${release}" == x"debian" ]]; then
         apt-get update -y
-        apt install wget curl unzip tar cron socat ca-certificates -y
+        apt install wget curl unzip tar cron socat ca-certificates jq -y
         update-ca-certificates
     elif [[ x"${release}" == x"ubuntu" ]]; then
         apt-get update -y
-        apt install wget curl unzip tar cron socat -y
+        apt install wget curl unzip tar cron socat jq -y
         apt-get install ca-certificates wget -y
         update-ca-certificates
     elif [[ x"${release}" == x"arch" ]]; then
         pacman -Sy
-        pacman -S --noconfirm --needed wget curl unzip tar cron socat
+        pacman -S --noconfirm --needed wget curl unzip tar cron socat jq
         pacman -S --noconfirm --needed ca-certificates wget
     fi
 }
