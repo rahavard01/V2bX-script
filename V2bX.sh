@@ -413,6 +413,7 @@ generate_x25519_key() {
     fi
 }
 
+# اضافه شد 
 add_node_to_existing_config() {
     echo -e "${yellow}Loading initconfig.sh and collecting new node info...${plain}"
 
@@ -420,29 +421,21 @@ add_node_to_existing_config() {
     source ./initconfig.sh
     rm -f ./initconfig.sh
 
+    temp_file="/tmp/new_generated_config.json"
+    echo -e "${yellow}Generating node using original generate_config...${plain}"
+    generate_config "$temp_file"
+
+    if [[ ! -f "$temp_file" ]]; then
+        echo -e "${red}❌ Failed to generate config.${plain}"
+        return
+    fi
+
+    new_node=$(jq '.Nodes[-1]' "$temp_file")
+    new_core=$(echo "$new_node" | jq -r '.Core')
+
     config_file="/etc/V2bX/config.json"
     backup_file="/etc/V2bX/config.json.bak"
     cp "$config_file" "$backup_file"
-
-    # گرفتن ApiHost و ApiKey از فایل
-    default_apihost=$(jq -r '.Nodes[0].ApiHost // empty' "$config_file")
-    default_apikey=$(jq -r '.Nodes[0].ApiKey // empty' "$config_file")
-
-    if [[ -n "$default_apihost" ]]; then
-        export ApiHost="$default_apihost"
-    fi
-    if [[ -n "$default_apikey" ]]; then
-        export ApiKey="$default_apikey"
-    fi
-
-    # ساخت نود جدید با اطلاعات کامل
-    nodes_config=()
-    generate_single_node_config
-    new_node="${nodes_config[0]}"
-    new_node=$(echo "$new_node" | sed 's/},$/}/')
-
-    new_core=$(echo "$new_node" | jq -r '.Core')
-    echo -e "${green}New node Core: ${new_core}${plain}"
 
     updated_nodes=$(jq --argjson new_node "$new_node" '.Nodes += [$new_node]' "$config_file")
 
@@ -496,12 +489,12 @@ add_node_to_existing_config() {
             updated_json="$updated_nodes"
         fi
     else
-        echo -e "${green}Core \"$new_core\" already exists in Cores. No need to add.${plain}"
+        echo -e "${green}Core \"$new_core\" already exists. No need to add.${plain}"
         updated_json="$updated_nodes"
     fi
 
     echo "$updated_json" > "$config_file"
-    echo -e "${green}✅ Node added successfully to config.json${plain}"
+    echo -e "${green}✅ Node added to config.json${plain}"
 
     echo -e "${yellow}Restarting V2bX service...${plain}"
     V2bX restart && echo -e "${green}V2bX restarted.${plain}"
