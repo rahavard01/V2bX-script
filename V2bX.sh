@@ -417,40 +417,36 @@ generate_x25519_key() {
 add_node_to_existing_config() {
     echo -e "${yellow}Loading initconfig.sh and collecting new node info...${plain}"
 
+    # دریافت فایل initconfig.sh و بارگذاری
     curl -o ./initconfig.sh -Ls https://raw.githubusercontent.com/rahavard01/V2bX-script/master/initconfig.sh
     source ./initconfig.sh
     rm -f ./initconfig.sh
 
-    temp_file="/tmp/new_generated_config.json"
-    echo -e "${yellow}Generating node using original generate_config...${plain}"
-    generate_config_file "$temp_file"
-
-    if [[ ! -f "$temp_file" ]]; then
-        echo -e "${red}❌ Failed to generate config.${plain}"
-        return
-    fi
-
-    new_node=$(jq '.Nodes[-1]' "$temp_file")
-    new_core=$(echo "$new_node" | jq -r '.Core')
+    # اجرای تابع جدید برای گرفتن فقط یک نود
+    new_node=$(generate_single_node_config)
+    new_node=$(echo "$new_node" | sed 's/},$/}/')  # حذف کامای انتهایی
 
     config_file="/etc/V2bX/config.json"
     backup_file="/etc/V2bX/config.json.bak"
     cp "$config_file" "$backup_file"
 
+    new_core=$(echo "$new_node" | jq -r '.Core')
+    echo -e "${green}New node Core: ${new_core}${plain}"
+
+    # اضافه کردن نود
     updated_nodes=$(jq --argjson new_node "$new_node" '.Nodes += [$new_node]' "$config_file")
 
+    # بررسی وجود core
     core_exists=$(echo "$updated_nodes" | jq --arg core "$new_core" '.Cores[] | select(.Type == $core)' | wc -l)
 
     if [[ "$core_exists" -eq 0 ]]; then
-        echo -e "${yellow}Core \"$new_core\" not found in existing Cores. Appending...${plain}"
+        echo -e "${yellow}Core \"$new_core\" not found. Appending...${plain}"
+
         case "$new_core" in
             "xray")
                 new_core_block='{
                     "Type": "xray",
-                    "Log": {
-                        "Level": "error",
-                        "ErrorPath": "/etc/V2bX/error.log"
-                    },
+                    "Log": { "Level": "error", "ErrorPath": "/etc/V2bX/error.log" },
                     "OutboundConfigPath": "/etc/V2bX/custom_outbound.json",
                     "RouteConfigPath": "/etc/V2bX/route.json"
                 }'
@@ -458,24 +454,15 @@ add_node_to_existing_config() {
             "sing")
                 new_core_block='{
                     "Type": "sing",
-                    "Log": {
-                        "Level": "error",
-                        "Timestamp": true
-                    },
-                    "NTP": {
-                        "Enable": false,
-                        "Server": "time.apple.com",
-                        "ServerPort": 0
-                    },
+                    "Log": { "Level": "error", "Timestamp": true },
+                    "NTP": { "Enable": false, "Server": "time.apple.com", "ServerPort": 0 },
                     "OriginalPath": "/etc/V2bX/sing_origin.json"
                 }'
                 ;;
             "hysteria2")
                 new_core_block='{
                     "Type": "hysteria2",
-                    "Log": {
-                        "Level": "error"
-                    }
+                    "Log": { "Level": "error" }
                 }'
                 ;;
             *)
@@ -494,14 +481,14 @@ add_node_to_existing_config() {
     fi
 
     echo "$updated_json" > "$config_file"
-    echo -e "${green}✅ Node added to config.json${plain}"
+    echo -e "${green}✅ Node added successfully to config.json${plain}"
 
+    # اجرای اجباری ریستارت
     echo -e "${yellow}Restarting V2bX service...${plain}"
-    V2bX restart && echo -e "${green}V2bX restarted.${plain}"
+    V2bX Space Restart
+    sleep 2
 
-    if [[ $# == 0 ]]; then
-        before_show_menu
-    fi
+    before_show_menu  # برگشت به منو
 }
 
 
