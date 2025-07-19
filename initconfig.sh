@@ -199,6 +199,31 @@ EOF
     nodes_config+=("$node_config")
 }
 
+# اضافه شد
+# تابع ساخت یک نود کامل بدون بازنویسی فایل config.json
+generate_single_node_config() {
+    local config_file="/etc/V2bX/config.json"
+
+    # بررسی اینکه ApiHost و ApiKey از قبل تو فایل config هست یا نه
+    if [[ -f "$config_file" ]]; then
+        default_apihost=$(jq -r '.Nodes[0].ApiHost // empty' "$config_file")
+        default_apikey=$(jq -r '.Nodes[0].ApiKey // empty' "$config_file")
+
+        [[ -n "$default_apihost" ]] && export ApiHost="$default_apihost"
+        [[ -n "$default_apikey" ]] && export ApiKey="$default_apikey"
+    fi
+
+    # تعریف لیست خالی برای ذخیره موقتی نود
+    nodes_config=()
+
+    # استفاده از تابع استاندارد برای گرفتن تمام اطلاعات نود
+    add_node_config
+
+    # فقط خروجی نود اول رو چاپ کن برای استفاده خارج از تابع
+    echo "${nodes_config[0]}"
+}
+
+
 generate_config_file() {
     echo -e "${yellow}V2bX Configuration File Wizard${plain}"
     echo -e "${red}Please read the following notes:${plain}"
