@@ -427,28 +427,34 @@ append_config_file() {
     current_cores=$(echo "$current_config" | jq '.Cores')
     current_nodes=$(echo "$current_config" | jq '.Nodes')
 
+    # Get ApiHost and ApiKey from existing config
     ApiHost=$(echo "$current_nodes" | jq -r '.[0].ApiHost')
     ApiKey=$(echo "$current_nodes" | jq -r '.[0].ApiKey')
 
     echo -e "\033[0;32mApiHost: $ApiHost\033[0m"
     echo -e "\033[0;32mApiKey : $ApiKey\033[0m"
 
+    # Prepare to collect nodes
     nodes_config=()
-    fixed_api_info=true
     core_xray=false
     core_sing=false
     core_hysteria2=false
 
     while true; do
-        read -rp "Add a new node? (Press Enter to continue, 'n' to exit): " continue_add
-        [[ "$continue_add" =~ ^[Nn][Oo]?$ ]] && break
-        add_node_config  # Make sure this function exists and handles the node input
+        read -rp "Add a new node? (Press Enter to continue, 'n' to finish): " continue_add
+        if [[ "$continue_add" =~ ^[Nn][Oo]?$ ]]; then
+            if [ "${#nodes_config[@]}" -eq 0 ]; then
+                echo -e "\033[0;33mNo nodes entered. Exiting without changes.\033[0m"
+                return
+            else
+                break  # Done adding nodes, continue to merge and save
+            fi
+        fi
+        add_node_config  # This function must define node and append to nodes_config
     done
 
-    # Build new nodes array safely
+    # Merge new nodes
     new_nodes_json=$(printf "%s\n" "${nodes_config[@]}" | jq -s '.')
-
-    # Merge nodes
     updated_nodes=$(echo "$current_nodes" "$new_nodes_json" | jq -s '.[0] + .[1]')
 
     # Merge cores
@@ -469,7 +475,7 @@ append_config_file() {
         updated_cores=$(echo "$updated_cores" | jq ". + [\$core]" --argjson core "$hysteria2_core")
     fi
 
-    # Backup old config
+    # Backup current config
     mv "$config_path" "$config_path.bak"
 
     # Write final config
