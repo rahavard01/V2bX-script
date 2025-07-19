@@ -501,3 +501,60 @@ EOF
     echo -e "${green}V2bX Configuration file generated. Restarting service...${plain}"
     v2bx restart
 }
+# اضافه شد
+generate_single_node_config() {
+    echo -e "${yellow}Generating single node config...${plain}"
+
+    nodes_config=()
+    read -rp "Enter Node ID: " node_id
+    read -rp "Enter Node Name: " node_name
+    read -rp "Enter Node Type (vless, hysteria2, tuic, etc): " node_type
+    read -rp "Enter Node Core (xray, sing, hysteria2, etc): " node_core
+
+    if [[ -z "$ApiHost" ]]; then
+        read -rp "Enter API Host (with https): " api_host
+    else
+        api_host="$ApiHost"
+        echo -e "${green}Using existing ApiHost: $api_host${plain}"
+    fi
+
+    if [[ -z "$ApiKey" ]]; then
+        read -rp "Enter API Key: " api_key
+    else
+        api_key="$ApiKey"
+        echo -e "${green}Using existing ApiKey: [hidden]${plain}"
+    fi
+
+    read -rp "Enter Cert Mode (auto/self/none): " cert_mode
+
+    if [[ "$cert_mode" == "auto" ]]; then
+        read -rp "Enter certificate domain (e.g. tuic.domain.com): " cert_domain
+        cert_block="\"CertConfig\": {
+            \"CertMode\": \"$cert_mode\",
+            \"Domain\": \"$cert_domain\"
+        }"
+    elif [[ "$cert_mode" == "self" ]]; then
+        read -rp "Enter certificate path: " cert_path
+        read -rp "Enter private key path: " key_path
+        cert_block="\"CertConfig\": {
+            \"CertMode\": \"$cert_mode\",
+            \"CertPath\": \"$cert_path\",
+            \"KeyPath\": \"$key_path\"
+        }"
+    else
+        cert_block="\"CertConfig\": {
+            \"CertMode\": \"$cert_mode\"
+        }"
+    fi
+
+    nodes_config[0]="{
+        \"NodeID\": $node_id,
+        \"NodeName\": \"$node_name\",
+        \"NodeType\": \"$node_type\",
+        \"Core\": \"$node_core\",
+        \"ApiHost\": \"$api_host\",
+        \"ApiKey\": \"$api_key\",
+        $cert_block
+    }"
+}
+
