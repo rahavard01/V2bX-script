@@ -199,27 +199,6 @@ EOF
     nodes_config+=("$node_config")
 }
 
-# اضافه شد
-# تابع ساخت یک نود کامل بدون بازنویسی فایل config.json
-generate_single_node_config() {
-    # بررسی و مقداردهی API Host و API Key از فایل config.json در صورت وجود
-    config_file="/etc/V2bX/config.json"
-    if [[ -f "$config_file" ]]; then
-        existing_api_host=$(jq -r '.Nodes[0].ApiHost // empty' "$config_file")
-        existing_api_key=$(jq -r '.Nodes[0].ApiKey // empty' "$config_file")
-
-        [[ -n "$existing_api_host" ]] && export API_HOST="$existing_api_host"
-        [[ -n "$existing_api_key" ]] && export API_KEY="$existing_api_key"
-    fi
-
-    # استفاده از generate_config_file برای گرفتن اطلاعات کامل نود جدید
-    nodes_config=()
-    generate_config_file
-
-    # بازگرداندن نود اول (تک نود اضافه‌شده)
-    echo "${nodes_config[0]}"
-}
-
 generate_config_file() {
     echo -e "${yellow}V2bX Configuration File Wizard${plain}"
     echo -e "${red}Please read the following notes:${plain}"
