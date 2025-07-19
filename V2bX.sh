@@ -419,7 +419,7 @@ append_config_file() {
 
     config_path="/etc/V2bX/config.json"
     if [[ ! -f "$config_path" ]]; then
-        echo -e "\033[0;31mConfig file not found. Please generate one first using Option 15.\033[0m"
+        echo -e "\033[0;31mConfig file not found. Please generate by using Option 15.\033[0m"
         return
     fi
 
@@ -441,7 +441,7 @@ append_config_file() {
     core_hysteria2=false
 
     while true; do
-        read -rp "Add a new node? (Press Enter to continue, 'n' to finish): " continue_add
+        read -rp "Add a new node? (Press Enter to continue, 'n' or 'no' to finish): " continue_add
         if [[ "$continue_add" =~ ^[Nn][Oo]?$ ]]; then
             if [ "${#nodes_config[@]}" -eq 0 ]; then
                 echo -e "\033[0;33mNo nodes entered. Exiting without changes.\033[0m"
