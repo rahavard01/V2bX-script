@@ -568,7 +568,9 @@ add_node_config_append() {
     certmode="none"; certdomain="example.com"
     if [[ "$isreality" != "y" && "$istls" == "y" ]]; then
         echo -e "${yellow}Select certificate request mode:${plain}"
-        echo -e "${green}1. HTTP mode - auto (domain resolved)${plain}\n2. DNS mode - auto (requires DNS provider API)\n3. Self mode - self-signed or custom certificate${plain}"
+        echo -e "${green}1. HTTP mode - auto (domain resolved)${plain}"
+        echo -e "${green}2. DNS mode - auto (requires DNS provider API)${plain}"
+        echo -e "${green}3. Self mode - self-signed or custom certificate${plain}"
         read -rp "Enter:" certmode
         case "$certmode" in
             1 ) certmode="http" ;;
