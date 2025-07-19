@@ -492,6 +492,7 @@ append_config_file() {
         }' > "$config_path"
 
     echo -e "\033[0;32m✔ Node(s) successfully added and config.json updated.\033[0m"
+    echo -e "\033[0;32mv2box restart ...\033[0m"
 
     # ری‌استارت سرویس
     v2bx restart 
