@@ -415,70 +415,64 @@ generate_x25519_key() {
 
 # اضافه شد 
 append_config_file() {
-    echo -e "${yellow}افزودن نود جدید به پیکربندی موجود...${plain}"
+    echo -e "\033[0;33mAppending new node(s) to existing configuration...\033[0m"
 
     config_path="/etc/V2bX/config.json"
     if [[ ! -f "$config_path" ]]; then
-        echo -e "${red}فایل پیکربندی فعلی یافت نشد. لطفاً ابتدا با گزینه ۱۵ پیکربندی بسازید.${plain}"
+        echo -e "\033[0;31mConfig file not found. Please generate one first using Option 15.\033[0m"
         return
     fi
 
-    # خواندن فایل JSON فعلی
     current_config=$(cat "$config_path")
     current_cores=$(echo "$current_config" | jq '.Cores')
     current_nodes=$(echo "$current_config" | jq '.Nodes')
 
-    # دریافت ApiHost و ApiKey از فایل قبلی
     ApiHost=$(echo "$current_nodes" | jq -r '.[0].ApiHost')
     ApiKey=$(echo "$current_nodes" | jq -r '.[0].ApiKey')
 
-    echo -e "${green}✓ ApiHost: $ApiHost${plain}"
-    echo -e "${green}✓ ApiKey:  $ApiKey${plain}"
+    echo -e "\033[0;32mApiHost: $ApiHost\033[0m"
+    echo -e "\033[0;32mApiKey : $ApiKey\033[0m"
 
-    # آماده‌سازی متغیرها
     nodes_config=()
-    cores_config=""
     fixed_api_info=true
-    first_node=true
     core_xray=false
     core_sing=false
     core_hysteria2=false
 
     while true; do
-        read -rp "افزودن نود جدید؟ (Enter برای ادامه، n برای خروج): " continue_add
+        read -rp "Add a new node? (Press Enter to continue, 'n' to exit): " continue_add
         [[ "$continue_add" =~ ^[Nn][Oo]?$ ]] && break
-        add_node_config
+        add_node_config  # Make sure this function exists and handles the node input
     done
 
-    # تولید نودهای جدید به فرمت JSON
-    new_nodes_str="${nodes_config[*]}"
-    new_nodes_json=$(echo "[$new_nodes_str]" | jq '.')
+    # Build new nodes array safely
+    new_nodes_json=$(printf "%s\n" "${nodes_config[@]}" | jq -s '.')
 
-    # افزودن نودها به قبلی‌ها
-    updated_nodes=$(echo "$current_nodes + $new_nodes_json" | jq -s 'add')
+    # Merge nodes
+    updated_nodes=$(echo "$current_nodes" "$new_nodes_json" | jq -s '.[0] + .[1]')
 
-    # افزودن Core در صورت جدید بودن
+    # Merge cores
     updated_cores=$(echo "$current_cores" | jq '.')
 
     if [ "$core_xray" = true ] && ! echo "$current_cores" | grep -q '"Type": "xray"'; then
         xray_core='{"Type":"xray","Log":{"Level":"error","ErrorPath":"/etc/V2bX/error.log"},"OutboundConfigPath":"/etc/V2bX/custom_outbound.json","RouteConfigPath":"/etc/V2bX/route.json"}'
-        updated_cores=$(echo "$updated_cores" | jq ". + [$xray_core]")
+        updated_cores=$(echo "$updated_cores" | jq ". + [\$core]" --argjson core "$xray_core")
     fi
 
     if [ "$core_sing" = true ] && ! echo "$current_cores" | grep -q '"Type": "sing"'; then
         sing_core='{"Type":"sing","Log":{"Level":"error","Timestamp":true},"NTP":{"Enable":false,"Server":"time.apple.com","ServerPort":0},"OriginalPath":"/etc/V2bX/sing_origin.json"}'
-        updated_cores=$(echo "$updated_cores" | jq ". + [$sing_core]")
+        updated_cores=$(echo "$updated_cores" | jq ". + [\$core]" --argjson core "$sing_core")
     fi
 
     if [ "$core_hysteria2" = true ] && ! echo "$current_cores" | grep -q '"Type": "hysteria2"'; then
         hysteria2_core='{"Type":"hysteria2","Log":{"Level":"error"}}'
-        updated_cores=$(echo "$updated_cores" | jq ". + [$hysteria2_core]")
+        updated_cores=$(echo "$updated_cores" | jq ". + [\$core]" --argjson core "$hysteria2_core")
     fi
 
-    # پشتیبان‌گیری
+    # Backup old config
     mv "$config_path" "$config_path.bak"
 
-    # ذخیره نهایی فایل
+    # Write final config
     jq -n \
         --argjson cores "$updated_cores" \
         --argjson nodes "$updated_nodes" \
@@ -491,7 +485,7 @@ append_config_file() {
             "Nodes": $nodes
         }' > "$config_path"
 
-    echo -e "${green}✔ نود جدید با موفقیت اضافه شد و فایل config به‌روزرسانی شد.${plain}"
+    echo -e "\033[0;32m✔ Node(s) successfully added and config.json updated.\033[0m"
 
     # ری‌استارت سرویس
     v2bx restart 
