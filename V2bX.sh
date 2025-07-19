@@ -423,7 +423,7 @@ add_node_to_existing_config() {
 
     temp_file="/tmp/new_generated_config.json"
     echo -e "${yellow}Generating node using original generate_config...${plain}"
-    generate_config "$temp_file"
+    generate_config_file "$temp_file"
 
     if [[ ! -f "$temp_file" ]]; then
         echo -e "${red}❌ Failed to generate config.${plain}"
