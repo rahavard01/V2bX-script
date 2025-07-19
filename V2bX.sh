@@ -450,7 +450,7 @@ append_config_file() {
                 break  # Done adding nodes, continue to merge and save
             fi
         fi
-        add_node_config  # This function must define node and append to nodes_config
+        add_node_config_append  # This function must define node and append to nodes_config
     done
 
     # Merge new nodes
@@ -510,6 +510,172 @@ show_V2bX_version() {
         before_show_menu
     fi
 }
+# اضافه شد
+
+add_node_config_append() {
+    echo -e "${green}Please select node core type:${plain}"
+    echo -e "${green}1. xray${plain}"
+    echo -e "${green}2. singbox${plain}"
+    echo -e "${green}3. hysteria2${plain}"
+    read -rp "Enter:" core_type
+
+    if [ "$core_type" == "1" ]; then
+        core="xray"; core_xray=true
+    elif [ "$core_type" == "2" ]; then
+        core="sing"; core_sing=true
+    elif [ "$core_type" == "3" ]; then
+        core="hysteria2"; core_hysteria2=true
+    else
+        echo "Invalid choice. Please select 1 2 3."
+        return
+    fi
+
+    while true; do
+        read -rp "Enter Node ID: " NodeID
+        [[ "$NodeID" =~ ^[0-9]+$ ]] && break || echo "Error: Please enter a valid number as Node ID."
+    done
+
+    if [ "$core_hysteria2" = true ] && [ "$core_xray" = false ] && [ "$core_sing" = false ]; then
+        NodeType="hysteria2"
+    else
+        echo -e "${yellow}Select node transport protocol:${plain}"
+        echo -e "${green}1. Shadowsocks${plain}"
+        echo -e "${green}2. Vless${plain}"
+        echo -e "${green}3. Vmess${plain}"
+        [ "$core_sing" == true ] && echo -e "${green}4. Hysteria\n5. Hysteria2\n7. Tuic\n8. AnyTLS${plain}"
+        [ "$core_hysteria2" == true ] && [ "$core_sing" = false ] && echo -e "${green}5. Hysteria2${plain}"
+        echo -e "${green}6. Trojan${plain}"
+
+        read -rp "Enter:" NodeType
+        case "$NodeType" in
+            1 ) NodeType="shadowsocks" ;;
+            2 ) NodeType="vless" ;;
+            3 ) NodeType="vmess" ;;
+            4 ) NodeType="hysteria" ;;
+            5 ) NodeType="hysteria2" ;;
+            6 ) NodeType="trojan" ;;
+            7 ) NodeType="tuic" ;;
+            8 ) NodeType="anytls" ;;
+            * ) NodeType="shadowsocks" ;;
+        esac
+    fi
+
+    fastopen=true
+    [[ "$NodeType" == "vless" ]] && read -rp "Is this a reality node? (y/n): " isreality
+    [[ "$NodeType" =~ hysteria|hysteria2|tuic|anytls ]] && fastopen=false && istls="y"
+    [[ "$isreality" != "y" && "$istls" != "y" ]] && read -rp "Enable TLS configuration? (y/n): " istls
+
+    certmode="none"; certdomain="example.com"
+    if [[ "$isreality" != "y" && "$istls" == "y" ]]; then
+        echo -e "${yellow}Select certificate request mode:${plain}"
+        echo -e "${green}1. HTTP${plain}\n2. DNS (API)\n3. Self-signed${plain}"
+        read -rp "Enter:" certmode
+        case "$certmode" in
+            1 ) certmode="http" ;;
+            2 ) certmode="dns" ;;
+            3 ) certmode="self" ;;
+        esac
+        read -rp "Enter cert domain (e.g. example.com): " certdomain
+        [ "$certmode" != "http" ] && echo -e "${red}Please manually edit config file and restart!${plain}"
+    fi
+
+    ipv6_support=$(check_ipv6_support)
+    listen_ip="0.0.0.0"
+    [ "$ipv6_support" -eq 1 ] && listen_ip="::"
+
+    if [ "$core_type" == "1" ]; then
+        node_config=$(cat <<EOF
+{
+    "Core": "$core",
+    "ApiHost": "$ApiHost",
+    "ApiKey": "$ApiKey",
+    "NodeID": $NodeID,
+    "NodeType": "$NodeType",
+    "Timeout": 30,
+    "ListenIP": "0.0.0.0",
+    "SendIP": "0.0.0.0",
+    "DeviceOnlineMinTraffic": 200,
+    "EnableProxyProtocol": false,
+    "EnableUot": true,
+    "EnableTFO": true,
+    "DNSType": "UseIPv4",
+    "CertConfig": {
+        "CertMode": "$certmode",
+        "RejectUnknownSni": false,
+        "CertDomain": "$certdomain",
+        "CertFile": "/etc/V2bX/fullchain.cer",
+        "KeyFile": "/etc/V2bX/cert.key",
+        "Email": "v2bx@github.com",
+        "Provider": "cloudflare",
+        "DNSEnv": {
+            "EnvName": "env1"
+        }
+    }
+}
+EOF
+)
+    elif [ "$core_type" == "2" ]; then
+        node_config=$(cat <<EOF
+{
+    "Core": "$core",
+    "ApiHost": "$ApiHost",
+    "ApiKey": "$ApiKey",
+    "NodeID": $NodeID,
+    "NodeType": "$NodeType",
+    "Timeout": 30,
+    "ListenIP": "$listen_ip",
+    "SendIP": "0.0.0.0",
+    "DeviceOnlineMinTraffic": 200,
+    "TCPFastOpen": $fastopen,
+    "SniffEnabled": true,
+    "CertConfig": {
+        "CertMode": "$certmode",
+        "RejectUnknownSni": false,
+        "CertDomain": "$certdomain",
+        "CertFile": "/etc/V2bX/fullchain.cer",
+        "KeyFile": "/etc/V2bX/cert.key",
+        "Email": "v2bx@github.com",
+        "Provider": "cloudflare",
+        "DNSEnv": {
+            "EnvName": "env1"
+        }
+    }
+}
+EOF
+)
+    elif [ "$core_type" == "3" ]; then
+        node_config=$(cat <<EOF
+{
+    "Core": "$core",
+    "ApiHost": "$ApiHost",
+    "ApiKey": "$ApiKey",
+    "NodeID": $NodeID,
+    "NodeType": "$NodeType",
+    "Hysteria2ConfigPath": "/etc/V2bX/hy2config.yaml",
+    "Timeout": 30,
+    "ListenIP": "",
+    "SendIP": "0.0.0.0",
+    "DeviceOnlineMinTraffic": 200,
+    "CertConfig": {
+        "CertMode": "$certmode",
+        "RejectUnknownSni": false,
+        "CertDomain": "$certdomain",
+        "CertFile": "/etc/V2bX/fullchain.cer",
+        "KeyFile": "/etc/V2bX/cert.key",
+        "Email": "v2bx@github.com",
+        "Provider": "cloudflare",
+        "DNSEnv": {
+            "EnvName": "env1"
+        }
+    }
+}
+EOF
+)
+    fi
+
+    nodes_config+=("$node_config")
+}
+# تا اینجا
 
 add_node_config() {
     echo -e "${green}Please select node core type:${plain}"
