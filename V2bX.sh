@@ -416,36 +416,40 @@ generate_x25519_key() {
 add_node_to_existing_config() {
     echo -e "${yellow}Loading initconfig.sh and collecting new node info...${plain}"
 
-    # گرفتن فایل initconfig و اجرای تابع ساخت نود
     curl -o ./initconfig.sh -Ls https://raw.githubusercontent.com/rahavard01/V2bX-script/master/initconfig.sh
     source ./initconfig.sh
     rm -f ./initconfig.sh
 
-    # اجرای تابع که اطلاعات نود جدید رو می‌گیره و خروجی رو توی nodes_config میریزه
-    nodes_config=()
-    add_node_config
-    new_node="${nodes_config[0]}"
-    new_node=$(echo "$new_node" | sed 's/},$/}/')  # حذف کامای انتهایی
-
-    # فایل config اصلی
     config_file="/etc/V2bX/config.json"
     backup_file="/etc/V2bX/config.json.bak"
     cp "$config_file" "$backup_file"
 
-    # گرفتن core مربوط به نود جدید
-    new_core=$(echo "$new_node" | jq -r '.Core')
+    # گرفتن ApiHost و ApiKey از فایل
+    default_apihost=$(jq -r '.Nodes[0].ApiHost // empty' "$config_file")
+    default_apikey=$(jq -r '.Nodes[0].ApiKey // empty' "$config_file")
 
+    if [[ -n "$default_apihost" ]]; then
+        export ApiHost="$default_apihost"
+    fi
+    if [[ -n "$default_apikey" ]]; then
+        export ApiKey="$default_apikey"
+    fi
+
+    # ساخت نود جدید با اطلاعات کامل
+    nodes_config=()
+    generate_single_node_config
+    new_node="${nodes_config[0]}"
+    new_node=$(echo "$new_node" | sed 's/},$/}/')
+
+    new_core=$(echo "$new_node" | jq -r '.Core')
     echo -e "${green}New node Core: ${new_core}${plain}"
 
-    # اضافه کردن نود به لیست Nodes
     updated_nodes=$(jq --argjson new_node "$new_node" '.Nodes += [$new_node]' "$config_file")
 
-    # بررسی اینکه آیا core در Cores وجود دارد؟
     core_exists=$(echo "$updated_nodes" | jq --arg core "$new_core" '.Cores[] | select(.Type == $core)' | wc -l)
 
     if [[ "$core_exists" -eq 0 ]]; then
-        echo -e "${green}Core \"$new_core\" not found in existing Cores. Appending...${plain}"
-
+        echo -e "${yellow}Core \"$new_core\" not found in existing Cores. Appending...${plain}"
         case "$new_core" in
             "xray")
                 new_core_block='{
@@ -482,11 +486,10 @@ add_node_to_existing_config() {
                 }'
                 ;;
             *)
-                echo -e "${green}Unknown core type \"$new_core\". Skipping core append.${plain}"
+                echo -e "${red}Unknown core type \"$new_core\". Skipping core append.${plain}"
                 ;;
         esac
 
-        # افزودن core جدید به لیست
         if [[ -n "$new_core_block" ]]; then
             updated_json=$(echo "$updated_nodes" | jq --argjson new_core "$new_core_block" '.Cores += [$new_core]')
         else
@@ -497,18 +500,17 @@ add_node_to_existing_config() {
         updated_json="$updated_nodes"
     fi
 
-    # ذخیره فایل نهایی
     echo "$updated_json" > "$config_file"
-
     echo -e "${green}✅ Node added successfully to config.json${plain}"
 
-    echo -e "${plain}Restarting V2bX...${plain}"
-    V2bX restart
-    
-    # برگشت به منوی اصلی
-    before_show_menu
+    echo -e "${yellow}Restarting V2bX service...${plain}"
+    V2bX restart && echo -e "${green}V2bX restarted.${plain}"
 
+    if [[ $# == 0 ]]; then
+        before_show_menu
+    fi
 }
+
 
 
 show_V2bX_version() {
