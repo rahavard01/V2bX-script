@@ -417,39 +417,43 @@ generate_x25519_key() {
 add_node_to_existing_config() {
     echo -e "${yellow}Loading initconfig.sh and collecting new node info...${plain}"
 
-    # گرفتن فایل initconfig و لود تابع تولید نود جدید
     curl -o ./initconfig.sh -Ls https://raw.githubusercontent.com/rahavard01/V2bX-script/master/initconfig.sh
     source ./initconfig.sh
     rm -f ./initconfig.sh
-
-    # اجرای تابع برای گرفتن نود کامل (پرسش‌و‌پاسخ کامل + API های خودکار)
-    new_node=$(generate_single_node_config)
-    new_node=$(echo "$new_node" | sed 's/},$/}/')  # حذف کامای پایانی
 
     config_file="/etc/V2bX/config.json"
     backup_file="/etc/V2bX/config.json.bak"
     cp "$config_file" "$backup_file"
 
+    # بررسی و مقداردهی API از فایل موجود
+    existing_api_host=$(jq -r '.Nodes[0].ApiHost // empty' "$config_file")
+    existing_api_key=$(jq -r '.Nodes[0].ApiKey // empty' "$config_file")
+
+    [[ -n "$existing_api_host" ]] && export API_HOST="$existing_api_host"
+    [[ -n "$existing_api_key" ]] && export API_KEY="$existing_api_key"
+
+    # گرفتن یک نود کامل جدید با تمام سوالات دقیق
+    new_node=$(generate_single_node_config)
+    new_node=$(echo "$new_node" | sed 's/},$/}/')  # حذف کامای انتهایی
+
+    # گرفتن Core از نود جدید
     new_core=$(echo "$new_node" | jq -r '.Core')
-    echo -e "${green}New node Core: ${new_core}${plain}"
+
+    echo -e "${green}✅ New node created with core: $new_core${plain}"
 
     # اضافه کردن نود به لیست Nodes
     updated_nodes=$(jq --argjson new_node "$new_node" '.Nodes += [$new_node]' "$config_file")
 
-    # بررسی وجود Core
+    # بررسی وجود core
     core_exists=$(echo "$updated_nodes" | jq --arg core "$new_core" '.Cores[] | select(.Type == $core)' | wc -l)
 
     if [[ "$core_exists" -eq 0 ]]; then
-        echo -e "${yellow}Core \"$new_core\" not found in existing Cores. Appending...${plain}"
-
+        echo -e "${yellow}New core \"$new_core\" will be added to config.json${plain}"
         case "$new_core" in
             "xray")
                 new_core_block='{
                     "Type": "xray",
-                    "Log": {
-                        "Level": "error",
-                        "ErrorPath": "/etc/V2bX/error.log"
-                    },
+                    "Log": { "Level": "error", "ErrorPath": "/etc/V2bX/error.log" },
                     "OutboundConfigPath": "/etc/V2bX/custom_outbound.json",
                     "RouteConfigPath": "/etc/V2bX/route.json"
                 }'
@@ -457,24 +461,15 @@ add_node_to_existing_config() {
             "sing")
                 new_core_block='{
                     "Type": "sing",
-                    "Log": {
-                        "Level": "error",
-                        "Timestamp": true
-                    },
-                    "NTP": {
-                        "Enable": false,
-                        "Server": "time.apple.com",
-                        "ServerPort": 0
-                    },
+                    "Log": { "Level": "error", "Timestamp": true },
+                    "NTP": { "Enable": false, "Server": "time.apple.com", "ServerPort": 0 },
                     "OriginalPath": "/etc/V2bX/sing_origin.json"
                 }'
                 ;;
             "hysteria2")
                 new_core_block='{
                     "Type": "hysteria2",
-                    "Log": {
-                        "Level": "error"
-                    }
+                    "Log": { "Level": "error" }
                 }'
                 ;;
             *)
@@ -483,27 +478,25 @@ add_node_to_existing_config() {
         esac
 
         if [[ -n "$new_core_block" ]]; then
-            updated_json=$(echo "$updated_nodes" | jq --argjson new_core "$new_core_block" '.Cores += [$new_core]')
+            updated_json=$(echo "$updated_nodes" | jq --argjson core "$new_core_block" '.Cores += [$core]')
         else
             updated_json="$updated_nodes"
         fi
     else
-        echo -e "${green}Core \"$new_core\" already exists in Cores. No need to add.${plain}"
+        echo -e "${green}Core \"$new_core\" already exists. Skipping core add.${plain}"
         updated_json="$updated_nodes"
     fi
 
-    # ذخیره فایل نهایی
     echo "$updated_json" > "$config_file"
-    echo -e "${green}✅ Node added successfully to config.json${plain}"
+    echo -e "${green}✅ Node added to config.json successfully.${plain}"
 
-    # ری‌استارت اجباری با دستور سفارشی
-    echo -e "\\n${yellow}Restarting V2bX service...${plain}"
-    V2bX Restart
+    # ری‌استارت سرویس
+    systemctl restart V2bX && echo -e "${green}V2bX service restarted.${plain}"
 
-    # بازگشت به منو
+    # برگشت به منو
+    sleep 1
     before_show_menu
 }
-
 
 
 show_V2bX_version() {
