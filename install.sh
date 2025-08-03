@@ -80,23 +80,23 @@ fi
 
 install_base() {
     if [[ x"${release}" == x"centos" ]]; then
-        yum install epel-release wget curl unzip tar crontabs socat ca-certificates -y >/dev/null 2>&1
+        yum install epel-release wget curl unzip tar crontabs socat ca-certificates jq -y >/dev/null 2>&1
         update-ca-trust force-enable >/dev/null 2>&1
     elif [[ x"${release}" == x"alpine" ]]; then
-        apk add wget curl unzip tar socat ca-certificates >/dev/null 2>&1
+        apk add wget curl unzip tar socat ca-certificates jq >/dev/null 2>&1
         update-ca-certificates >/dev/null 2>&1
     elif [[ x"${release}" == x"debian" ]]; then
         apt-get update -y >/dev/null 2>&1
-        apt install wget curl unzip tar cron socat ca-certificates -y >/dev/null 2>&1
+        apt install wget curl unzip tar cron socat ca-certificates jq -y >/dev/null 2>&1
         update-ca-certificates >/dev/null 2>&1
     elif [[ x"${release}" == x"ubuntu" ]]; then
         apt-get update -y >/dev/null 2>&1
-        apt install wget curl unzip tar cron socat -y >/dev/null 2>&1
+        apt install wget curl unzip tar cron socat jq -y >/dev/null 2>&1
         apt-get install ca-certificates wget -y >/dev/null 2>&1
         update-ca-certificates >/dev/null 2>&1
     elif [[ x"${release}" == x"arch" ]]; then
         pacman -Sy --noconfirm >/dev/null 2>&1
-        pacman -S --noconfirm --needed wget curl unzip tar cron socat >/dev/null 2>&1
+        pacman -S --noconfirm --needed wget curl unzip tar cron socat jq >/dev/null 2>&1
         pacman -S --noconfirm --needed ca-certificates wget >/dev/null 2>&1
     fi
 }
@@ -138,7 +138,8 @@ install_V2bX() {
             exit 1
         fi
         echo -e "Detected latest V2bX version: ${last_version}, starting installation"
-        wget --no-check-certificate -N --progress=bar -O /usr/local/V2bX/V2bX-linux.zip https://github.com/wyx2685/V2bX/releases/download/${last_version}/V2bX-linux-${arch}.zip        if [[ $? -ne 0 ]]; then
+        wget --no-check-certificate -N --progress=bar -O /usr/local/V2bX/V2bX-linux.zip https://github.com/wyx2685/V2bX/releases/download/${last_version}/V2bX-linux-${arch}.zip
+        if [[ $? -ne 0 ]]; then
             echo -e "${red}Failed to download V2bX. Ensure your server can access Github.${plain}"
             exit 1
         fi
