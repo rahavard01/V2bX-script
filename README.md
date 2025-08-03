@@ -1,7 +1,7 @@
 # V2bX
 A V2board node server based on Xray-Core.
 
-one based on Xray of V2board Node service，support V2ay,Trojan,Shadowsocks protocol
+one based on Xray of V2board Node service，support V2ay,Trojan,Shadowsocks,Tuic,Hysteria,Anytls protocol
 
 Find the source code here: [InazumaV/V2bX](https://github.com/InazumaV/V2bX)
 
