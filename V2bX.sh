@@ -598,6 +598,7 @@ add_node_config_append() {
     "ListenIP": "0.0.0.0",
     "SendIP": "0.0.0.0",
     "DeviceOnlineMinTraffic": 200,
+    "MinReportTraffic": 0,
     "EnableProxyProtocol": false,
     "EnableUot": true,
     "EnableTFO": true,
@@ -629,6 +630,7 @@ EOF
     "ListenIP": "$listen_ip",
     "SendIP": "0.0.0.0",
     "DeviceOnlineMinTraffic": 200,
+    "MinReportTraffic": 0,
     "TCPFastOpen": $fastopen,
     "SniffEnabled": true,
     "CertConfig": {
@@ -659,6 +661,7 @@ EOF
     "ListenIP": "",
     "SendIP": "0.0.0.0",
     "DeviceOnlineMinTraffic": 200,
+    "MinReportTraffic": 0,
     "CertConfig": {
         "CertMode": "$certmode",
         "RejectUnknownSni": false,
